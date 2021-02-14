@@ -16,6 +16,7 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -74,7 +75,7 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		T instance;
 
 		try {
-			instance = wrapperClass.newInstance();
+			instance = wrapperClass.getDeclaredConstructor().newInstance();
 		} catch (ReflectiveOperationException ex) {
 			throw new InvalidWrapperException(wrapperClass.getSimpleName() + " is not accessible!", ex);
 		}
@@ -110,7 +111,9 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		Object instance;
 
 		try {
-			instance = nmsClass.newInstance();
+			Constructor<?> declaredConstructor = nmsClass.getDeclaredConstructor();
+			declaredConstructor.setAccessible(true);
+			instance = declaredConstructor.newInstance();
 		} catch (ReflectiveOperationException ex) {
 			throw new InvalidWrapperException("Failed to construct new " + nmsClass.getSimpleName(), ex);
 		}
