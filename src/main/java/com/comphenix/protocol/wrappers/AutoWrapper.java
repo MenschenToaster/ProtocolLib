@@ -16,6 +16,9 @@
  */
 package com.comphenix.protocol.wrappers;
 
+import com.comphenix.protocol.reflect.EquivalentConverter;
+import com.comphenix.protocol.utility.MinecraftReflection;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,9 +26,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
-import com.comphenix.protocol.reflect.EquivalentConverter;
-import com.comphenix.protocol.utility.MinecraftReflection;
 
 /**
  * Automatically wraps an internal NMS class to a non-versioned, deofbuscated class.
@@ -75,7 +75,9 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		T instance;
 
 		try {
-			instance = wrapperClass.getDeclaredConstructor().newInstance();
+			Constructor<T> declaredConstructor = wrapperClass.getDeclaredConstructor();
+			declaredConstructor.setAccessible(true);
+			instance = declaredConstructor.newInstance();
 		} catch (ReflectiveOperationException ex) {
 			throw new InvalidWrapperException(wrapperClass.getSimpleName() + " is not accessible!", ex);
 		}
@@ -131,8 +133,6 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 				Field nmsField = nmsFields[i];
 				if (!nmsField.isAccessible())
 					nmsField.setAccessible(true);
-				if (Modifier.isFinal(nmsField.getModifiers()))
-					unsetFinal(nmsField);
 
 				Object value = wrapperField.get(wrapper);
 				if (unwrappers.containsKey(i))
@@ -147,11 +147,6 @@ public class AutoWrapper<T> implements EquivalentConverter<T> {
 		return instance;
 	}
 
-	private void unsetFinal(Field field) throws ReflectiveOperationException {
-		Field modifiers = Field.class.getDeclaredField("modifiers");
-		modifiers.setAccessible(true);
-		modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-	}
 
 	// ---- Equivalent conversion
 
